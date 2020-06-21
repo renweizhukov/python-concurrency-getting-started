@@ -17,6 +17,8 @@ class ThumbnailMakerService(object):
         self.home_dir = home_dir
         self.input_dir = self.home_dir + os.path.sep + 'incoming'
         self.output_dir = self.home_dir + os.path.sep + 'outgoing'
+        self.downloaded_bytes = 0
+        self.download_lock = threading.Lock()
 
     def download_image(self, url):
         # download each image and save to the input dir
@@ -24,7 +26,10 @@ class ThumbnailMakerService(object):
         img_filename = urlparse(url).path.split('/')[-1]
         img_full_path = os.path.join(self.input_dir, img_filename)
         urlretrieve(url, img_full_path)
-        logging.info("Image saved to {}".format(img_full_path))
+        img_size = os.path.getsize(img_full_path)
+        with self.download_lock:
+            self.downloaded_bytes += img_size
+        logging.info("Image [{} bytes] saved to {}".format(img_size, img_full_path))
 
     def download_images(self, img_url_list):
         # validate inputs
